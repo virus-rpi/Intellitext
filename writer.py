@@ -34,10 +34,10 @@ class writer:
             f"""The following is a {self.type} with the name {self.name} 
             It is written with great detail. 
             Description: {self.description}\n. 
-            Summary of last 3 chapters: {self.data['summary'][-3:]} 
-            Chapter {self.data['chapter_count'] + 1}\n"""
+            Summary of last 3 chapters: {self.data['chapter_summary'][-3:]} 
+            Chapter {self.data['chapter_count']}\n"""
         )
-        self.data['book'] = self.data['book'] + chapter
+        self.data['book'] = self.data['book'] + chapter + "\n\n"
         self.data['chapter_summary'].append(summary)
         self.data['chapter_count'] += 1
         print(f"Chapter {self.data['chapter_count']} written")
