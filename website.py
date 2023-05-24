@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # Create a dictionary to store cached audio files
 audio_cache = {}
-target_language = 'de'
+target_language = 'en'
 
 
 @lru_cache
@@ -63,7 +63,7 @@ def index():
             name = os.path.splitext(file)[0]
             book_links += f'<a href="/{name}">{name}</a> <a href="/audio/{name}">(Audio)</a><br>'
 
-    target_languages = ['de', 'fr', 'es', 'en']
+    target_languages = ['de', 'en']
 
     language_options = ""
     for language in target_languages:
@@ -122,6 +122,19 @@ def combined_audio_files(audio_files, output_path):
     combined_audio.export(output_path, format="mp3")
 
 
+def change_voice(engine, language):
+    if language == "de":
+        language = "DE-DE"
+    else:
+        language = "EN-US"
+    for voice in engine.getProperty('voices'):
+        if language in voice.id:
+            engine.setProperty('voice', voice.id)
+            return True
+
+    raise RuntimeError("Language '{}'not found".format(language))
+
+
 @app.route('/audio/<name>')
 def audio(name):
     if os.path.isfile(name + ".json"):
@@ -144,12 +157,12 @@ def audio(name):
         for i, chapter_text in enumerate(chapters):
             chapter_name = f"{name}_chapter_{i + 1}"
             if chapter_name in audio_cache:
-                # If chapter audio is already cached, use it
                 audio_files.append(audio_cache[chapter_name])
             else:
+                print("Speaking")
                 temp_path = tempfile.mktemp(suffix='.mp3')
                 engine = pyttsx3.init()
-                engine.setProperty('voice', f'{target_language}')
+                change_voice(engine, target_language)
                 engine.save_to_file(chapter_text, temp_path)
                 engine.runAndWait()
                 audio_files.append(temp_path)
