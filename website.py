@@ -1,13 +1,58 @@
 import json
 import os
 import tempfile
-from flask import Flask, send_file
-from gtts import gTTS
+from flask import Flask, send_file, request
+import pyttsx3
+from pydub import AudioSegment
+from deep_translator import GoogleTranslator
+from functools import lru_cache
 
 app = Flask(__name__)
 
 # Create a dictionary to store cached audio files
 audio_cache = {}
+target_language = 'de'
+
+
+@lru_cache
+def split_text(text, max_chars):
+    print("Splitting")
+    sentences = text.split('. ')
+    smaller_texts = []
+    current_text = ""
+
+    for sentence in sentences:
+        if len(current_text) + len(sentence) <= max_chars:
+            current_text += sentence + '. '
+        else:
+            smaller_texts.append(current_text)
+            current_text = sentence + '. '
+
+    if current_text:
+        smaller_texts.append(current_text)  # Append the last remaining text
+    print("Splitted")
+    return smaller_texts
+
+
+@lru_cache
+def translate_text(text, target_language):
+    translation = GoogleTranslator(source='auto', target=target_language).translate(text)
+    return translation
+
+
+@lru_cache
+def translate_large_text(text, target_language, max_chars):
+    smaller_texts = split_text(text, max_chars)
+    translated_chunks = []
+
+    for chunk in smaller_texts:
+        print("Translating chunk")
+        translated_chunk = translate_text(chunk, target_language)
+        translated_chunks.append(translated_chunk)
+
+    translated_text = ' '.join(translated_chunks)
+    print("Translated")
+    return translated_text
 
 
 @app.route('/')
@@ -18,11 +63,34 @@ def index():
             name = os.path.splitext(file)[0]
             book_links += f'<a href="/{name}">{name}</a> <a href="/audio/{name}">(Audio)</a><br>'
 
+    target_languages = ['de', 'fr', 'es', 'en']
+
+    language_options = ""
+    for language in target_languages:
+        selected = "selected" if language == target_language else ""
+        language_options += f'<option value="{language}" {selected}>{language}</option>'
+
+    # Render the index template with the dropdown menu
     return f"""
     <h1>Welcome!</h1>
     <p>Books:</p>
     {book_links}
+
+    <form action="/" method="POST">
+        <label for="language">Select Target Language:</label>
+        <select name="language" id="language">
+            {language_options}
+        </select>
+        <input type="submit" value="Set Language">
+    </form>
     """
+
+
+@app.route('/', methods=['POST'])
+def set_language():
+    global target_language
+    target_language = request.form['language']
+    return index()
 
 
 @app.route('/<name>')
@@ -30,13 +98,28 @@ def book(name):
     if os.path.isfile(name + ".json"):
         with open(name + ".json", 'r') as f:
             data = json.load(f)
+
+        text = data['book']
+        if target_language != 'en':
+            text = translate_large_text(data['book'], target_language, 200)
+
         website = f"""
         <h1>{data["name"]}</h1>
-        <p>{data["book"]}</p>
+        <p>{text}</p>
         """
     else:
         website = "Sorry, that book doesn't exist."
     return website
+
+
+def combined_audio_files(audio_files, output_path):
+    combined_audio = AudioSegment.silent(duration=0)
+
+    for audio_file in audio_files:
+        audio_segment = AudioSegment.from_file(audio_file)
+        combined_audio += audio_segment
+
+    combined_audio.export(output_path, format="mp3")
 
 
 @app.route('/audio/<name>')
@@ -49,15 +132,36 @@ def audio(name):
             # Return the cached audio file if it exists
             return send_file(audio_cache[name], mimetype='audio/mpeg')
 
-        tts = gTTS(data["book"])
+        text = data['book']
+        if target_language != 'en':
+            text = translate_large_text(data['book'], target_language, 200)
 
-        temp_fd, temp_path = tempfile.mkstemp(suffix='.mp3')
-        os.close(temp_fd)
+        max_chars = 200
+        chapters = split_text(text, max_chars)
 
-        tts.save(temp_path)
-        audio_cache[name] = temp_path  # Cache the generated audio file
+        # Generate audio for each chapter
+        audio_files = []
+        for i, chapter_text in enumerate(chapters):
+            chapter_name = f"{name}_chapter_{i + 1}"
+            if chapter_name in audio_cache:
+                # If chapter audio is already cached, use it
+                audio_files.append(audio_cache[chapter_name])
+            else:
+                temp_path = tempfile.mktemp(suffix='.mp3')
+                engine = pyttsx3.init()
+                engine.setProperty('voice', f'{target_language}')
+                engine.save_to_file(chapter_text, temp_path)
+                engine.runAndWait()
+                audio_files.append(temp_path)
+                audio_cache[chapter_name] = temp_path
 
-        return send_file(temp_path, mimetype='audio/mpeg')
+        # Concatenate audio files for all chapters
+        combined_audio_path = tempfile.mktemp(suffix='.mp3')
+        combined_audio_files(audio_files, combined_audio_path)
+
+        # Serve the combined audio file
+        return send_file(combined_audio_path, mimetype='audio/mpeg')
+
     else:
         return "Sorry, that book doesn't exist."
 
