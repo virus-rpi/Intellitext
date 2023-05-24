@@ -30,7 +30,13 @@ class writer:
         return [chapter, summary]
 
     def writeNextChapter(self):
-        chapter, summary = self.write(f"The following is a {self.type} with the name {self.name} It is written with great detail. Description: {self.description}\nChapter {len(self.data['chapter_summary']) + 1}\n")
+        chapter, summary = self.write(
+            f"""The following is a {self.type} with the name {self.name} 
+            It is written with great detail. 
+            Description: {self.description}\n. 
+            Summary of last 3 chapters: {self.data['summary'][-3:]} 
+            Chapter {self.data['chapter_count'] + 1}\n"""
+        )
         self.data['book'] = self.data['book'] + chapter
         self.data['chapter_summary'].append(summary)
         self.data['chapter_count'] += 1

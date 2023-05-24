@@ -1,15 +1,4 @@
-from flask import Flask
 from writer import writer
-
-# app = Flask(__name__)
-
-
-# @app.route('/')
-# def index():
-#     return "Hello World"
-
-
-# app.run(host='localhost')
 
 if __name__ == "__main__":
     print("Welcome")
