@@ -7,3 +7,10 @@ gTTS~=2.3.2
 pyttsx3~=2.90
 pydub~=0.25.1
 deep_translator
+gpt4free~=1.0.2
+pygpt4all~=1.1.0
+Pygments~=2.15.1
+numpy~=1.24.3
+pypiwin32~=223
+pywin32~=306
+requests==2.31.0

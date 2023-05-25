@@ -1,5 +1,7 @@
 from nomic.gpt4all import GPT4All
 import openai
+import gpt4free
+from gpt4free import Provider
 
 
 class AI:
@@ -11,7 +13,18 @@ class AI:
             self.m = GPT4All()
             self.m.open()
 
-    def prompt(self, prompt):
+    def prompt(self, args):
+        book_type = args[0]
+        name = args[1]
+        description = args[2]
+        data = args[3]
+        prompt = f"""The following is a {book_type} with the name {name} 
+            It is written with great detail. 
+            Description: {description}\n. 
+            {f"Summary of last chapters: {data['chapter_summary'][-5:]}" if len(data['chapter_summary']) >= 1 else ""}
+            The following is the {data['chapter_count'] + 1} Chapter.
+        """
+
         response = "No AI available"
         if self.ai_type == "openai":
             response = openai.Completion.create(
@@ -28,6 +41,15 @@ class AI:
         elif self.ai_type == "debug":
             print(prompt)
             response = "Debug enabled!"
+        elif self.ai_type == "gpt4free":
+            prompt = f"""
+            Write the {data['chapter_count'] + 1} chapter of a book named {name} it is about {description}.
+            {f"Summary of last chapters: {data['chapter_summary'][-5:]}" if len(data['chapter_summary']) >= 1 else ""}
+            Please write the chapter with great detail.
+            """
+            response = gpt4free.Completion.create(
+                Provider.You, prompt=prompt,
+            )
         return response
 
     def summarize(self, chapter):
@@ -46,5 +68,8 @@ class AI:
             response = self.m.prompt(f"{chapter}\n\nThe same text summarized in one sentence:\n\n")
         elif self.ai_type == "debug":
             response = "Debug enabled!"
+        elif self.ai_type == "gpt4free":
+            response = gpt4free.Completion.create(
+                Provider.You, prompt=f"Summarize the following text in one Sentence:\n{chapter}\n\n"
+            )
         return response
-

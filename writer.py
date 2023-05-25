@@ -31,12 +31,12 @@ class writer:
 
     def writeNextChapter(self):
         chapter, summary = self.write(
-            f"""The following is a {self.type} with the name {self.name} 
-            It is written with great detail. 
-            Description: {self.description}\n. 
-            {f"Summary of last chapters: {self.data['chapter_summary'][-5:]}" if len(self.data['chapter_summary']) >= 1 else ""}
-            The following is the {self.data['chapter_count'] + 1} Chapter.
-            """
+            [
+                self.type,
+                self.name,
+                self.description,
+                self.data
+            ]
         )
         self.data['book'].append(chapter + "\n\n")
         self.data['chapter_summary'].append(summary)

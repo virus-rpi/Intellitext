@@ -103,7 +103,7 @@ def book(name):
         with open(name + ".json", 'r') as f:
             data = json.load(f)
 
-        text = data['book']
+        text = ''.join(data['book'])
         if target_language != 'en':
             text = translate_large_text(data['book'], target_language, 4500)
 
@@ -149,7 +149,7 @@ def audio(name):
             # Return the cached audio file if it exists
             return send_file(audio_cache[name], mimetype='audio/mpeg')
 
-        text = data['book']
+        text = ''.join(data['book'])
         if target_language != 'en':
             text = translate_large_text(data['book'], target_language, 4500)
 
