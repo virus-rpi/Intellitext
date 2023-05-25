@@ -9,7 +9,6 @@ from functools import lru_cache
 
 app = Flask(__name__)
 
-# Create a dictionary to store cached audio files
 audio_cache = {}
 target_language = 'en'
 
@@ -45,8 +44,8 @@ def translate_large_text(text, target_language, max_chars):
     smaller_texts = split_text(text, max_chars)
     translated_chunks = []
 
+    print("Translating")
     for chunk in smaller_texts:
-        print("Translating chunk")
         translated_chunk = translate_text(chunk, target_language)
         translated_chunks.append(translated_chunk)
 
@@ -78,11 +77,16 @@ def index():
 
     <form action="/" method="POST">
         <label for="language">Select Target Language:</label>
-        <select name="language" id="language">
+        <select name="language" id="language" onchange="this.form.submit()">
             {language_options}
         </select>
-        <input type="submit" value="Set Language">
     </form>
+    """ + """
+    <script>
+        document.getElementById('language').addEventListener('change', function() {
+            this.form.submit();
+        });
+    </script>
     """
 
 
@@ -101,7 +105,7 @@ def book(name):
 
         text = data['book']
         if target_language != 'en':
-            text = translate_large_text(data['book'], target_language, 200)
+            text = translate_large_text(data['book'], target_language, 4500)
 
         website = f"""
         <h1>{data["name"]}</h1>
@@ -147,7 +151,7 @@ def audio(name):
 
         text = data['book']
         if target_language != 'en':
-            text = translate_large_text(data['book'], target_language, 200)
+            text = translate_large_text(data['book'], target_language, 4500)
 
         max_chars = 200
         chapters = split_text(text, max_chars)
@@ -180,4 +184,4 @@ def audio(name):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="192.168.178.53", port=3000)

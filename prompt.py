@@ -25,6 +25,9 @@ class AI:
             )["choices"][0]["text"]
         elif self.ai_type == "local":
             response = self.m.prompt(prompt)
+        elif self.ai_type == "debug":
+            print(prompt)
+            response = "Debug enabled!"
         return response
 
     def summarize(self, chapter):
@@ -41,5 +44,7 @@ class AI:
             )["choices"][0]["text"]
         elif self.ai_type == "local":
             response = self.m.prompt(f"{chapter}\n\nThe same text summarized in one sentence:\n\n")
+        elif self.ai_type == "debug":
+            response = "Debug enabled!"
         return response
 
