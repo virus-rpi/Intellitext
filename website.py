@@ -28,7 +28,7 @@ def split_text(text, max_chars):
             current_text = sentence + '. '
 
     if current_text:
-        smaller_texts.append(current_text)  # Append the last remaining text
+        smaller_texts.append(current_text)
     print("Splitted")
     return smaller_texts
 
@@ -103,13 +103,17 @@ def book(name):
         with open(name + ".json", 'r') as f:
             data = json.load(f)
 
-        text = ''.join(data['book'])
-        if target_language != 'en':
-            text = translate_large_text(data['book'], target_language, 4500)
+        book_raw = data['book'].split('\n\n')
+
+        book = ""
+        for text in book_raw:
+            if target_language != 'en':
+                text = translate_large_text(data['book'], target_language, 4500)
+            book += f"<p>{text}</p>"
 
         website = f"""
         <h1>{data["name"]}</h1>
-        <p>{text}</p>
+        {book}
         """
     else:
         website = "Sorry, that book doesn't exist."
@@ -184,4 +188,4 @@ def audio(name):
 
 
 if __name__ == '__main__':
-    app.run(host="192.168.178.53", port=3000)
+    app.run(host="192.168.178.53", port=80)

@@ -2,6 +2,7 @@ from nomic.gpt4all import GPT4All
 import openai
 import gpt4free
 from gpt4free import Provider
+from opengpt import OpenGPT
 
 
 class AI:
@@ -12,6 +13,8 @@ class AI:
         elif self.ai_type == "local":
             self.m = GPT4All()
             self.m.open()
+        elif self.ai_type == "opengpt":
+            pass
 
     def prompt(self, args):
         book_type = args[0]
@@ -45,11 +48,15 @@ class AI:
             prompt = f"""
             Write the {data['chapter_count'] + 1} chapter of a book named {name} it is about {description}.
             {f"Summary of last chapters: {data['chapter_summary'][-5:]}" if len(data['chapter_summary']) >= 1 else ""}
-            Please write the chapter with great detail.
+            Please write the chapter with great detail. Answer with only the chapter of the book.
             """
-            response = gpt4free.Completion.create(
-                Provider.You, prompt=prompt,
-            )
+            while True:
+                response = gpt4free.Completion.create(
+                    Provider.You, prompt=prompt, proxy="162.208.49.45:7808"
+                )
+                if response != "Unable to fetch the response, Please try again.":
+                    break
+                print("Error")
         return response
 
     def summarize(self, chapter):
@@ -69,7 +76,13 @@ class AI:
         elif self.ai_type == "debug":
             response = "Debug enabled!"
         elif self.ai_type == "gpt4free":
-            response = gpt4free.Completion.create(
-                Provider.You, prompt=f"Summarize the following text in one Sentence:\n{chapter}\n\n"
-            )
+            prompt = f"Summarize the following text in one Sentence:\n{chapter}\n"
+            while True:
+                response = gpt4free.Completion.create(
+                    Provider.You, prompt=prompt, proxy="162.208.49.45:7808"
+                )
+                print(prompt)
+                print(response)
+                if response != "Unable to fetch the response, Please try again.":
+                    break
         return response
